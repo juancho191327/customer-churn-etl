@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+*.env
+
+# Kaggle API credentials
+kaggle.json
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Logs and databases
+logs/
+*.log
+*.sqlite
+*.db
+
+# VS Code settings
+.vscode/
+
+# MacOS and Windows system files
+.DS_Store
+Thumbs.db
