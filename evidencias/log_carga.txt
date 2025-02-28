@@ -1,1 +1,1 @@
-Se cargaron 7043 registros en MySQL.
+Se cargaron 12043 registros en MySQL.

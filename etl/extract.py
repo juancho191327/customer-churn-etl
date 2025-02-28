@@ -2,6 +2,8 @@ import os
 import kaggle
 import pandas as pd
 import mysql.connector
+import random
+import string
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -19,61 +21,71 @@ DATASET_FILE = "WA_Fn-UseC_-Telco-Customer-Churn.csv"
 DATA_PATH = "data/"
 EVIDENCE_PATH = "evidencias/"
 
+# Generación de datos sintéticos
+def generate_customer_id():
+    return f"{random.randint(1000, 9999)}-{''.join(random.choices(string.ascii_uppercase, k=5))}"
+
+
+def generate_synthetic_data(num_samples):
+    synthetic_data = []
+    
+    for _ in range(num_samples):
+        sample = {
+            "customerID": generate_customer_id(),
+            "gender": random.choice(["Male", "Female"]),
+            "SeniorCitizen": random.choice([0, 1]),
+            "Partner": random.choice(["Yes", "No"]),
+            "Dependents": random.choice(["Yes", "No"]),
+            "tenure": random.randint(1, 72),
+            "PhoneService": random.choice(["Yes", "No"]),
+            "MultipleLines": random.choice(["Yes", "No", "No phone service"]),
+            "InternetService": random.choice(["DSL", "Fiber optic", "No"]),
+            "OnlineSecurity": random.choice(["Yes", "No", "No internet service"]),
+            "OnlineBackup": random.choice(["Yes", "No", "No internet service"]),
+            "DeviceProtection": random.choice(["Yes", "No", "No internet service"]),
+            "TechSupport": random.choice(["Yes", "No", "No internet service"]),
+            "StreamingTV": random.choice(["Yes", "No", "No internet service"]),
+            "StreamingMovies": random.choice(["Yes", "No", "No internet service"]),
+            "Contract": random.choice(["Month-to-month", "One year", "Two year"]),
+            "PaperlessBilling": random.choice(["Yes", "No"]),
+            "PaymentMethod": random.choice(["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"]),
+            "MonthlyCharges": round(random.uniform(20.0, 120.0), 2),
+            "TotalCharges": round(random.uniform(20.0, 8000.0), 2),
+            "Churn": random.choice(["Yes", "No"])
+        }
+        synthetic_data.append(sample)
+
+    return pd.DataFrame(synthetic_data)
+
+# Guardar evidencias
 def save_evidence(df, step_name):
-    """Guarda una muestra de datos y estadísticas en archivos CSV como evidencia."""
     if not os.path.exists(EVIDENCE_PATH):
         os.makedirs(EVIDENCE_PATH)
-
     df.head(10).to_csv(f"{EVIDENCE_PATH}/{step_name}_muestra.csv", index=False)
     df.describe().to_csv(f"{EVIDENCE_PATH}/{step_name}_estadisticas.csv")
-    df.isnull().sum().to_csv(f"{EVIDENCE_PATH}/{step_name}_valores_nulos.csv")
-
     print(f"📁 Evidencias guardadas en {EVIDENCE_PATH}")
 
+# Extracción de datos
 def extract_data():
-    """Descarga datos desde Kaggle y los guarda en un DataFrame con validaciones."""
-    
     if not os.path.exists(DATA_PATH):
         os.makedirs(DATA_PATH)
-
-    # Descargar el dataset de Kaggle
     kaggle.api.dataset_download_files(KAGGLE_DATASET, path=DATA_PATH, unzip=True)
-
-    # Cargar datos en un DataFrame
-    file_path = os.path.join(DATA_PATH, DATASET_FILE)
-    df = pd.read_csv(file_path)
-
-    print("✅ Datos extraídos de Kaggle con éxito.")
-
-    # Registrar extracción
-    with open(f"{EVIDENCE_PATH}/log_extraccion.txt", "w") as log_file:
-        log_file.write("Datos extraídos correctamente desde Kaggle.\n")
+    df = pd.read_csv(f"{DATA_PATH}/{DATASET_FILE}")
+    df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+    synthetic_df = generate_synthetic_data(5000)
+    df = pd.concat([df, synthetic_df], ignore_index=True)
     
-    # Validaciones y limpieza
-    print("🔎 Validando y limpiando datos...")
-
-    # Valores nulos
-    nulls = df.isnull().sum()
-    if nulls.any():
-        print("⚠️ Se detectaron valores nulos. Guardando evidencia...")
-        df[df.isnull().any(axis=1)].to_csv(f"{EVIDENCE_PATH}/valores_nulos.csv", index=False)
-
-    # Duplicados
-    duplicados = df[df.duplicated()]
-    if not duplicados.empty:
-        print("⚠️ Se detectaron valores duplicados. Guardando evidencia...")
-        duplicados.to_csv(f"{EVIDENCE_PATH}/duplicados.csv", index=False)
-
-    # Limpieza de TotalCharges
-    df['TotalCharges'] = df['TotalCharges'].astype(str).str.strip()  # Quitar espacios
-    df['TotalCharges'] = df['TotalCharges'].replace("", None)        # Vacíos -> None
-    df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')  # Convertir a float
-
-    print("✅ Datos limpiados correctamente.")
-
-    # Guardar evidencia después de limpieza
+    # Eliminar duplicados
+    df.drop_duplicates(subset=["customerID"], keep="first", inplace=True)
+    
+    # Verificar si hay menos de 10000 registros y generar más si es necesario
+    while len(df) < 10000:
+        remaining = 10000 - len(df)
+        additional_df = generate_synthetic_data(remaining)
+        df = pd.concat([df, additional_df], ignore_index=True)
+        df.drop_duplicates(subset=["customerID"], keep="first", inplace=True)
+    
     save_evidence(df, "datos_limpiados")
-
     return df
 
 def load_data(df):
@@ -149,5 +161,3 @@ def load_data(df):
 if __name__ == "__main__":
     df = extract_data()
     load_data(df)
-
-
