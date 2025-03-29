@@ -10,18 +10,20 @@ Antes de ejecutar el proyecto, asegúrate de tener instalados los siguientes req
 - Poetry (para la gestión de dependencias)
 - MySQL Server
 - Una cuenta en Kaggle
+- Apache Airflow
+- Java 17 o superior para Metabase
 
 ## 📂 Instalación y Configuración
 
 ### 1️⃣ Clonar el repositorio
 ```bash
-    git clone https://github.com/juancho191327/customer-churn-etl.git
-    cd customer-churn-etl
+git clone https://github.com/juancho191327/customer-churn-etl.git
+cd customer-churn-etl
 ```
 
 ### 2️⃣ Configurar un entorno virtual con Poetry
 ```bash
-    poetry install
+poetry install
 ```
 
 ### 3️⃣ Configurar credenciales de Kaggle
@@ -34,9 +36,9 @@ Para descargar el dataset, es necesario obtener las credenciales de Kaggle:
 
 Ejemplo de comando en Linux/Mac:
 ```bash
-    mkdir -p ~/.kaggle
-    mv /ruta/al/archivo/kaggle.json ~/.kaggle/
-    chmod 600 ~/.kaggle/kaggle.json  # Asegurar permisos adecuados
+mkdir -p ~/.kaggle
+mv /ruta/al/archivo/kaggle.json ~/.kaggle/
+chmod 600 ~/.kaggle/kaggle.json  # Asegurar permisos adecuados
 ```
 
 ### 4️⃣ Configurar credenciales de MySQL
@@ -53,14 +55,31 @@ DB_NAME=customer_churn
 
 Para ejecutar el pipeline ETL, simplemente corre el siguiente comando:
 ```bash
-    poetry run python main.py
+poetry run python main.py
 ```
 
-## 📊 Descripción del Pipeline ETL
+## ⏳ Automatización con Apache Airflow
 
-1️⃣ **Extracción**: Se descarga el dataset `Telco Customer Churn` desde Kaggle y se carga en un DataFrame de Pandas.
-2️⃣ **Transformación**: Se limpian los datos, convirtiendo valores vacíos en `NaN` y ajustando los tipos de datos.
-3️⃣ **Carga**: Los datos transformados se insertan en una base de datos MySQL en la tabla `customer_churn_extract`.
+El pipeline ETL está automatizado mediante Apache Airflow. Para ejecutarlo:
+
+1. Inicia Airflow:
+```bash
+airflow standalone
+```
+2. Accede a la interfaz en `http://localhost:8080` con:
+   - Usuario: `admin`
+   - Contraseña: `admin`
+3. Activa y ejecuta el DAG `etl_telco_churn`.
+
+## 📊 Visualización en Metabase
+
+El análisis de datos se presenta en un dashboard en **Metabase**.
+
+### 1️⃣ Iniciar Metabase
+```bash
+java -jar metabase.jar
+```
+Accede a `http://localhost:3000`, configura la conexión a MySQL y carga el dashboard.
 
 ## 📌 Notas Adicionales
 - Asegúrate de que MySQL esté corriendo antes de ejecutar el pipeline.
@@ -71,4 +90,3 @@ DROP TABLE customer_churn_extract;
 
 ## 📞 Contacto
 Si tienes preguntas o mejoras, no dudes en contribuir o abrir un issue en el repositorio. 🚀
-
