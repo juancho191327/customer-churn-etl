@@ -1,6 +1,7 @@
 from etl.extract import extract_data
+from etl.extract import load_data
 from etl.transform import transform_data
-#from etl.load import load_data
+from etl.load import load_transformed_data
 import os
 
 EVIDENCE_PATH = "evidencias/"
@@ -14,14 +15,20 @@ def main():
     try:
         print("\n🚀 Iniciando proceso ETL...")
         
-        # 🛠 EXTRACCIÓN
+       # 🛠 EXTRACCIÓN
         print("\n📥 Extrayendo datos desde Kaggle...")
         data = extract_data()
         print("✅ Extracción completada.")
 
         # Guardar muestra de datos extraídos como evidencia
         data.head(10).to_csv(f"{EVIDENCE_PATH}/extraccion_muestra.csv", index=False)
+        print(f"📁 Evidencia de extracción guardada en {EVIDENCE_PATH}.")
 
+        # Guardar datos en base
+        print("\n📤 Cargando datos en MySQL...")
+        load_data(data)
+        print("✅ Carga en base de datos completada.")
+        
         # 🛠 TRANSFORMACIÓN
         print("\n🔄 Transformando datos...")
         data = transform_data(data)
@@ -36,11 +43,11 @@ def main():
         print(f"📁 Datos transformados guardados en {TRANSFORMED_DATA_PATH}.")
 
         # 🛠 CARGA
-        #print("\n📤 Cargando datos en MySQL...")
-        #load_data(data)
-        #print("✅ Carga en base de datos completada.")
+        print("\n📤 Cargando datos transformados en MySQL...")
+        load_transformed_data(data)
+        print("✅ Carga en base de datos completada.")
 
-        #print("\n🎯 ETL finalizado exitosamente. 🚀")
+        print("\n🎯 ETL finalizado exitosamente. 🚀")
 
     except Exception as e:
         error_msg = f"❌ Error en el proceso ETL: {str(e)}"
